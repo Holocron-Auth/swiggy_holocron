@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:swiggy_holocron/login.dart';
+import 'package:Swiggy_Holocron/login.dart';
 // import  'package:starter.dart';
 import 'home.dart';
 import 'login.dart';

@@ -1,6 +1,9 @@
+import 'package:Swiggy_Holocron/redirect.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'home.dart';
 import 'dart:io';
+import 'package:mobile_number/mobile_number.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -15,11 +18,45 @@ class _LoginScreenState extends State<LoginScreen> {
   bool isExpanded = false;
   bool isExpanded2 = false;
   String age = "21";
+  String _mobileNumber = '';
+  List<SimCard> _simCard = <SimCard>[];
 
-  @override
-  // void initState(){
-  //   image = File('assets/profile.png');
-  // }
+  void initState() {
+    super.initState();
+    MobileNumber.listenPhonePermission((isPermissionGranted) {
+      if (isPermissionGranted) {
+        initMobileNumberState();
+      } else {}
+    });
+
+    initMobileNumberState();
+  }
+
+  // Platform messages are asynchronous, so we initialize in an async method.
+  Future<void> initMobileNumberState() async {
+    if (!await MobileNumber.hasPhonePermission) {
+      await MobileNumber.requestPhonePermission;
+      return;
+    }
+    String mobileNumber = '';
+    // Platform messages may fail, so we use a try/catch PlatformException.
+    try {
+      mobileNumber = (await MobileNumber.mobileNumber)!;
+      _simCard = (await MobileNumber.getSimCards)!;
+    } on PlatformException catch (e) {
+      debugPrint("Failed to get mobile number because of '${e.message}'");
+    }
+
+    // If the widget was removed from the tree while the asynchronous platform
+    // message was in flight, we want to discard the reply rather than calling
+    // setState to update our non-existent appearance.
+    if (!mounted) return;
+
+    setState(() {
+      _mobileNumber = mobileNumber;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     var _padding = MediaQuery.of(context).padding;
@@ -29,7 +66,7 @@ class _LoginScreenState extends State<LoginScreen> {
         _padding.bottom -
         kBottomNavigationBarHeight;
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.orange,
       body: Column(
         children: [
           Container(
@@ -39,15 +76,19 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Stack(
                 children: [
                   Container(
-                    child: Image.asset('assets/back.png', fit: BoxFit.fitWidth),
-                  ),
-                  Container(
                     alignment: Alignment.center,
                     margin: EdgeInsets.only(top: 0.25 * height),
                     child: Image.asset('assets/front.png'),
                   ),
                 ],
               )),
+          Container(
+            child: Text('S W I G G Y',
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 0.1 * width,
+                    fontWeight: FontWeight.bold)),
+          ),
           Container(
               height: 0.09 * height,
               margin: EdgeInsets.only(
@@ -60,262 +101,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   )),
               child: ElevatedButton(
                   onPressed: () {
-                    // Navigator.push(
-                    //   context,
-                    //   MaterialPageRoute(builder: (context) => PermissionsScreen()),
-                    // );
-                    showDialog(
-                      context: context,
-                      builder: (BuildContext context) {
-                        return AlertDialog(
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(25)),
-                          title: Container(child: Text('Login to Swiggy')),
-                          content: Container(
-                              height: 0.357 * height,
-                              child: Column(children: [
-                                Row(children: [
-                                  Text('Verified by',
-                                      style: TextStyle(color: Colors.black)),
-                                  Text(' Holocron',
-                                      style:
-                                          TextStyle(color: Colors.deepOrange)),
-                                  Container(
-                                    margin: EdgeInsets.only(left: 0.01 * width),
-                                    child: Image.asset(
-                                      'assets/Vector.png',
-                                      scale: 6,
-                                    ),
-                                  ),
-                                ]),
-                                Row(children: [
-                                  Container(
-                                    margin: EdgeInsets.only(top: 0.01 * height),
-                                    decoration: BoxDecoration(
-                                      color: Colors.black,
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: Colors.orange,
-                                        width: 2,
-                                      ),
-                                    ),
-                                    child: CircleAvatar(
-                                      radius: 30.0,
-                                      backgroundImage: FileImage(image!),
-                                    ),
-                                  ),
-                                  Container(
-                                      margin:
-                                          EdgeInsets.only(left: 0.02 * width),
-                                      child: Column(
-                                          // mainAxisAlignment: MainAxisAlignment.start,
-                                          children: [
-                                            Container(
-                                                margin: EdgeInsets.only(
-                                                    top: 0.01 * height,
-                                                    right: 0.1 * width,
-                                                    bottom: 0.01 * height),
-                                                child: Text(
-                                                  name,
-                                                  style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                      fontSize: 20,
-                                                      color: Colors.black),
-                                                )),
-                                            Container(
-                                                margin: EdgeInsets.only(
-                                                    right: 0.15 * width),
-                                                child: Text('+91 ' + number,
-                                                    style: TextStyle(
-                                                        fontSize: 14,
-                                                        fontWeight:
-                                                            FontWeight.w300,
-                                                        color: Colors.black))),
-                                            Container(
-                                                child: Text(email,
-                                                    style: TextStyle(
-                                                        fontWeight:
-                                                            FontWeight.w300,
-                                                        fontSize: 14,
-                                                        color: Colors.black)))
-                                          ]))
-                                ]),
-                                Container(
-                                    margin: EdgeInsets.only(top: 0.05 * height),
-                                    width: width,
-                                    height: 0.05 * height,
-                                    decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.all(
-                                            Radius.circular(100.0))),
-                                    child: ElevatedButton(
-                                        style: ElevatedButton.styleFrom(
-                                            backgroundColor: Color(0xffEF4626)),
-                                        onPressed: () {
-                                          showDialog(
-                                              context: context,
-                                              builder: (BuildContext context) {
-                                                return AlertDialog(
-                                                    shape: RoundedRectangleBorder(
-                                                        borderRadius: BorderRadius.circular(25)),
-                                                    title: Container(
-                                                        child: Text(
-                                                            'Authorise Access',
-                                                            style: TextStyle(
-                                                                color: Colors
-                                                                    .black))),
-                                                    content: Container(
-                                                        // height: 0.5 * height,
-                                                        width: width,
-                                                        child:
-                                                            Column(children: [
-                                                          Row(children: [
-                                                            Text('Verified by',
-                                                                style: TextStyle(
-                                                                    color: Colors
-                                                                        .black)),
-                                                            Text(' Holocron',
-                                                                style: TextStyle(
-                                                                    color: Colors
-                                                                        .deepOrange)),
-                                                            Container(
-                                                              margin: EdgeInsets
-                                                                  .only(
-                                                                      left: 0.01 *
-                                                                          width),
-                                                              child:
-                                                                  Image.asset(
-                                                                'assets/Vector.png',
-                                                                scale: 6,
-                                                              ),
-                                                            ),
-                                                          ]),
-                                                              Container(
-                                                                margin: EdgeInsets.only(top:0.01*height, right:0.2*width),
-                                                                  child:Text('This will allow Swiggy to:', style: TextStyle(color: Colors.black, fontSize: 18))),
-                                                              //Expansion Tiles 
-                                                              Container(
-                                                                margin: EdgeInsets.only(top:0.01*height),
-                                                                // height: 0.08*height,
-                                                                decoration: BoxDecoration(
-                                                                  borderRadius: BorderRadius.all(Radius.circular(10)),
-                                                                  border: Border.all(color: Colors.black, width: 2)
-                                                                ),
-                                                                child:ExpansionTile(title: Text('See your Name, Phone Number and Email ID linked to this account', style: TextStyle(color:Colors.black, fontSize: 12,fontWeight: FontWeight.w400),),
-                                                                  onExpansionChanged: (bool expanded) {
-                                                                    isExpanded = expanded;
-                                                                    print(isExpanded);
-                                                                  },
-                                                                  children: [
-                                                                    Container(
-                                                                      child:Text(
-                                                                        'Name: $name',style: TextStyle(color:Colors.black, fontSize: 12,fontWeight: FontWeight.w400),
-                                                                      )
-                                                                    ),
-                                                                    Container(
-                                                                      child:Text(
-                                                                        'Phone Number: +91$number',style: TextStyle(color:Colors.black, fontSize: 12,fontWeight: FontWeight.w400),
-                                                                      )
-                                                                    ),
-                                                                    Container(
-                                                                      child: Text(
-                                                                        'Email ID: $email',style: TextStyle(color:Colors.black, fontSize: 12,fontWeight: FontWeight.w400),
-                                                                      )
-                                                                    ),
-                                                                  ],
-                                                                )
-                                                              ),
-                                                              Container(
-                                                                  margin: EdgeInsets.only(top:0.01*height),
-                                                                  // height: 0.08*height,
-                                                                  decoration: BoxDecoration(
-                                                                      borderRadius: BorderRadius.all(Radius.circular(10)),
-                                                                      border: Border.all(color: Colors.black, width: 2)
-                                                                  ),
-                                                                  child:ExpansionTile(title: Text('Know your basic information such as Age, Gender and Address', style: TextStyle(color:Colors.black, fontSize: 12,fontWeight: FontWeight.w400),),
-                                                                    onExpansionChanged: (bool expanded) {
-                                                                      isExpanded2 = expanded;
-                                                                      print(isExpanded2);
-                                                                    },
-                                                                    children: [
-                                                                      Container(
-                                                                        child:Text("Age: " + age, style: TextStyle(color:Colors.black, fontSize: 12,fontWeight: FontWeight.w400),)
-                                                                      )
-
-
-
-                                                                    ],
-                                                                  )
-                                                              ),
-                                                              Container(
-                                                                margin: EdgeInsets.only(top:0.01*height, left:0.01*width),
-                                                                child:Text('By clicking Accept, you all this app and Holocron to use your information in accordance with their respective terms of service and privacy policy. You can change this and other account permissions at any times.', style: TextStyle(color:Colors.black, fontWeight: FontWeight.w300 , fontSize: 10))
-                                                              ),
-
-                                                              Container(
-                                                                margin: EdgeInsets.only(top:0.02*height),
-                                                                height: 0.07*height,
-                                                                width: width,
-                                                                decoration: BoxDecoration(
-                                                                  borderRadius: BorderRadius.all(Radius.circular(15))
-                                                                ),
-                                                                child:ElevatedButton(
-                                                                  style:ElevatedButton.styleFrom(
-                                                                    backgroundColor: Colors.deepOrange,
-                                                                    elevation: 10
-                                                                  ),
-                                                                  onPressed: () {
-                                                                    Navigator.push(
-                                                                      context,
-                                                                      MaterialPageRoute(
-                                                                          builder: (context) => PermissionsScreen()),
-                                                                    );
-                                                                  },
-                                                                  child: Text('Accept', style:TextStyle(color:Colors.white, fontSize: 24, fontWeight: FontWeight.w500))
-
-                                                                )
-                                                              ),
-
-                                                              Container(
-                                                                child: TextButton(
-                                                                  onPressed: () {  },
-                                                                  child:Text('I do not want to share these information', style: TextStyle(color:Colors.deepOrange, fontSize:12, fontWeight: FontWeight.w300 ))
-
-                                                                )
-                                                              )
-                                                        ]))
-                                                );
-                                              });
-                                        },
-                                        child: Text("Continue",
-                                            style: TextStyle(
-                                                color: Colors.white)))),
-                                Container(
-                                    margin: EdgeInsets.only(top: 0.01 * height),
-                                    child: Text('Login with another Account',
-                                        style: TextStyle(
-                                            color: Colors.deepOrange,
-                                            fontSize: 12))),
-                                Container(
-                                    margin: EdgeInsets.only(top: 0.01 * height),
-                                    child: Text(
-                                        'By continuing, you agree to sharing your details with the concerned 3rd Part app via Holocron',
-                                        style: TextStyle(
-                                            color: Colors.black, fontSize: 8))),
-                                Container(
-                                    child: TextButton(
-                                  onPressed: () {},
-                                  child: Text(
-                                    'Terms and Conditions',
-                                    style: TextStyle(
-                                        color: Colors.deepOrange,
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w500),
-                                  ),
-                                ))
-                              ])),
-                        );
-                      },
+                    String mobileNumber = _mobileNumber;
+                    print("here it is ");
+                    print(mobileNumber);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) =>
+                              RedirectScreen(number: mobileNumber)),
                     );
                   },
                   style: ElevatedButton.styleFrom(
