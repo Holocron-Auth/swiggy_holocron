@@ -1,9 +1,12 @@
+import 'dart:convert';
+
 import 'package:Swiggy_Holocron/redirect.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'home.dart';
 import 'dart:io';
 import 'package:mobile_number/mobile_number.dart';
+import 'package:http/http.dart' as http;
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -11,15 +14,47 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  String name = "Priya Aggarwal";
+  String name = "Ritvik Pendyala";
   String number = "9502546860";
-  String email = "priyaaggarwal@gmail.com";
-  File image = File('assets/profile.png');
+  String email = "pendyala20096@iiitd.ac.in";
+  // File image = File('assets/profile.png');
   bool isExpanded = false;
   bool isExpanded2 = false;
   String age = "21";
   String _mobileNumber = '';
   List<SimCard> _simCard = <SimCard>[];
+
+  Future<Map<String, dynamic>> fetchData(String phone) async {
+    var headers = {
+      'ngrok-skip-browser-warning': '1',
+      'Content-Type': 'text/plain',
+    };
+    String phone1 = (phone.substring(phone.length - 10));
+
+    var data =
+        '{"json": {"phone": "$phone1" , "clientID": "mu9sNO34Ue-dunlOx2dZ7", "scope": "identify email phone address"}}';
+
+    // var url =
+    //     Uri.parse('https://55e1-103-25-231-102.ngrok-free.app/api/trpc/mobile.thirdParty');
+    var url = Uri.parse('https://holocron-auth.gjd.one/api/trpc/mobile.thirdParty');
+    print("In progress");
+    var res = await http.post(url, headers: headers, body: data);
+    if (res.statusCode != 200) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text("Details couldn't be retrieved"),
+        duration: Duration(seconds: 2),
+      ));
+    }
+    print(res.body);
+    print("splitter");
+    var decoded = jsonDecode(res.body);
+    print(decoded);
+    // print(decoded['result']['data']['json']['user']['name']);
+    // print(jsonDecode(res.body)['result']['data']['json']['name']);
+    // print(decoded['result'].runtimeType);
+    return decoded['result'];
+    // print(res.body);
+  }
 
   void initState() {
     super.initState();
@@ -70,18 +105,15 @@ class _LoginScreenState extends State<LoginScreen> {
       body: Column(
         children: [
           Container(
-              width: width,
-              color: Colors.orange,
-              margin: EdgeInsets.only(top: 0.02 * height),
-              child: Stack(
-                children: [
-                  Container(
-                    alignment: Alignment.center,
-                    margin: EdgeInsets.only(top: 0.25 * height),
-                    child: Image.asset('assets/front.png'),
-                  ),
-                ],
-              )),
+            width: width,
+            color: Colors.orange,
+            margin: EdgeInsets.only(top: 0.02 * height),
+            child: Container(
+              alignment: Alignment.center,
+              margin: EdgeInsets.only(top: 0.25 * height),
+              child: Image.asset('assets/front.png'),
+            ),
+          ),
           Container(
             child: Text('S W I G G Y',
                 style: TextStyle(
@@ -100,15 +132,19 @@ class _LoginScreenState extends State<LoginScreen> {
                     width: 2,
                   )),
               child: ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
                     String mobileNumber = _mobileNumber;
+                    String mobile =
+                        mobileNumber.substring(mobileNumber.length - 10);
                     print("here it is ");
-                    print(mobileNumber);
+                    print(mobile);
+                    var response = await fetchData(mobileNumber);
+                    print(response);
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                           builder: (context) =>
-                              RedirectScreen(number: mobileNumber)),
+                              RedirectScreen(number: mobile, data1: response)),
                     );
                   },
                   style: ElevatedButton.styleFrom(

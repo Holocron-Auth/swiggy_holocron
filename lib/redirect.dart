@@ -1,24 +1,52 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:io';
-
+import 'package:http/http.dart' as http;
 import 'home.dart';
 
 class RedirectScreen extends StatefulWidget {
   final String number;
-  const RedirectScreen({required this.number});
+  final Map<String, dynamic> data1;
+  const RedirectScreen({required this.number, required this.data1});
   @override
   RedirectScreenState createState() => RedirectScreenState();
 }
 
 class RedirectScreenState extends State<RedirectScreen> {
-  String name = "Priya Aggarwal";
+
   // late String mobileNumber;
-  String email = "priyaaggarwal@gmail.com";
-  File image = File('assets/profile.png');
+
+  // String email = "pendyala20096@iiitd.ac.in";
+  // File image = File('assets/profile.png');
   bool isExpanded = false;
   bool isExpanded2 = false;
-  String age = "21";
+
+
+  Future<bool> getConsent(String phone) async {
+    var headers = {
+      'ngrok-skip-browser-warning': '1',
+      'Content-Type': 'text/plain',
+    };
+    var data = '{"json": {"phone":"$phone","clientID": "mu9sNO34Ue-dunlOx2dZ7"}}';
+
+    var url = Uri.parse('https://holocron-auth.gjd.one/api/trpc/mobile.thirdPartyConsent');
+    var res = await http.post(url, headers: headers, body: data);
+
+    if (res.statusCode != 200) {
+      return false;
+    }
+    else {
+      var decoded = jsonDecode(res.body);
+      bool response  =  decoded['result']['data']["json"]["success"];
+      // String response1 = response as String;
+      print(response);
+      return true;
+    }
+  }
+
+  // String age = "21";
   @override
   Widget build(BuildContext context) {
     var _padding = MediaQuery.of(context).padding;
@@ -27,6 +55,19 @@ class RedirectScreenState extends State<RedirectScreen> {
         _padding.top -
         _padding.bottom -
         kBottomNavigationBarHeight;
+    // String name = widget.data1['data']['json']['name'];
+    String name =widget.data1['data']['json']["user"]['name'];
+    String email = widget.data1['data']['json']["user"]['email'];
+    String phone = widget.data1['data']['json']["user"]['phone'];
+    String gender = widget.data1['data']['json']["user"]["gender"];
+    String dob = widget.data1['data']['json']["user"]["dateOfBirth"];
+    String address = widget.data1['data']['json']["user"]["address"];
+    //calculate age from dob
+    DateTime today = DateTime.now();
+    DateTime dob1 = DateTime.parse(dob);
+    int age1 = today.year - dob1.year;
+    // String image = widget.data1[]
+
     return Scaffold(
         backgroundColor: Colors.white,
         body: Container(
@@ -66,7 +107,14 @@ Container(      margin:EdgeInsets.only(left:0.04*width),           child: Text('
                     ),
                     child: CircleAvatar(
                       radius: 30.0,
-                      backgroundImage: FileImage(image!),
+                      child: Text(
+                        name.isNotEmpty ? name[0] : "",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20.0,
+                        ),
+                      ),
+                      backgroundColor: Colors.orange,
                     ),
                   ),
                   Container(
@@ -87,8 +135,8 @@ Container(      margin:EdgeInsets.only(left:0.04*width),           child: Text('
                                       color: Colors.black),
                                 )),
                             Container(
-                                margin: EdgeInsets.only(right: 0.15 * width),
-                                child: Text('+91 ' + widget.number,
+                                margin: EdgeInsets.only(right: 0.2 * width),
+                                child: Text(widget.number.substring(widget.number.length - 10),
                                     style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.w300,
@@ -189,7 +237,7 @@ Container(      margin:EdgeInsets.only(left:0.04*width),           child: Text('
                                                   )),
                                                   Container(
                                                       child: Text(
-                                                    'Phone Number: +91' + widget.number,
+                                                    "Phone Number:" +  widget.number.substring(widget.number.length - 10),
                                                     style: TextStyle(
                                                         color: Colors.black,
                                                         fontSize: 12,
@@ -235,13 +283,23 @@ Container(      margin:EdgeInsets.only(left:0.04*width),           child: Text('
                                                 children: [
                                                   Container(
                                                       child: Text(
-                                                    "Age: " + age,
+                                                    "Age:   ${age1}",
                                                     style: TextStyle(
                                                         color: Colors.black,
                                                         fontSize: 12,
                                                         fontWeight:
                                                             FontWeight.w400),
-                                                  ))
+                                                  )),
+                                                  Container(
+                                                    child:Text(
+                                                      "Gender: $gender",
+                                                      style: TextStyle(
+                                                          color: Colors.black,
+                                                          fontSize: 12,
+                                                          fontWeight:
+                                                          FontWeight.w400),
+                                                    )
+                                                  )
                                                 ],
                                               )),
                                           Container(
@@ -271,13 +329,25 @@ Container(      margin:EdgeInsets.only(left:0.04*width),           child: Text('
                                                           backgroundColor:
                                                               Colors.deepOrange,
                                                           elevation: 10),
-                                                  onPressed: () {
-                                                    Navigator.push(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                          builder: (context) =>
-                                                              PermissionsScreen()),
-                                                    );
+                                                  onPressed: () async{
+                                                    bool consent  = await getConsent(phone);
+                                                    // var url = Uri.parse('https://holocron-auth.gjd.one/api/trpc/mobile.thirdPartyConsent');
+                                                    if(consent == true){
+                                                      Navigator.push(
+                                                        context,
+                                                        MaterialPageRoute(
+                                                            builder: (context) =>
+                                                                PermissionsScreen()),
+                                                      );
+
+                                                    }
+                                                    else{
+                                                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                                        content: Text('Consent not Stored. Try Again'),
+                                                        duration: Duration(seconds: 2),
+                                                      ));
+                                                    }
+
                                                   },
                                                   child: Text('Accept',
                                                       style: TextStyle(
